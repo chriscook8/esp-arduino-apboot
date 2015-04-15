@@ -6,6 +6,7 @@
 MDNSResponder mdns;
 WiFiServer server(80);
 
+// ssid is the access point name to use when booting into config mode
 const char* ssid = "BUBBLES";
 String st;
 
