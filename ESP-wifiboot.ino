@@ -6,7 +6,6 @@
 MDNSResponder mdns;
 WiFiServer server(80);
 
-// ssid is the access point name to use when booting into config mode
 const char* ssid = "BUBBLES";
 String st;
 
@@ -33,30 +32,30 @@ void setup() {
       epass += char(EEPROM.read(i));
     }
   Serial.print("PASS: ");
-  Serial.println(epass);
+  Serial.println(epass);  
   if ( esid.length() > 1 ) {
-      // test esid
+      // test esid 
       WiFi.begin(esid.c_str(), epass.c_str());
-      if ( testWifi() == 20 ) {
+      if ( testWifi() == 20 ) { 
           launchWeb(0);
           return;
       }
   }
-  setupAP();
+  setupAP(); 
 }
 
 int testWifi(void) {
   int c = 0;
-  Serial.println("Waiting for Wifi to connect");
+  Serial.println("Waiting for Wifi to connect");  
   while ( c < 20 ) {
-    if (WiFi.status() == WL_CONNECTED) { return(20); }
+    if (WiFi.status() == WL_CONNECTED) { return(20); } 
     delay(500);
-    Serial.print(WiFi.status());
+    Serial.print(WiFi.status());    
     c++;
   }
   Serial.println("Connect timed out, opening AP");
   return(10);
-}
+} 
 
 void launchWeb(int webtype) {
           Serial.println("");
@@ -65,24 +64,23 @@ void launchWeb(int webtype) {
           Serial.println(WiFi.softAPIP());
           if (!mdns.begin("esp8266", WiFi.localIP())) {
             Serial.println("Error setting up MDNS responder!");
-            while(1) {
+            while(1) { 
               delay(1000);
             }
           }
           Serial.println("mDNS responder started");
           // Start the server
           server.begin();
-          Serial.println("Server started");
-          return;
+          Serial.println("Server started");   
           int b = 20;
           int c = 0;
-          while(b == 20) {
+          while(b == 20) { 
              b = mdns1(webtype);
            }
 }
 
 void setupAP(void) {
-
+  
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
@@ -107,7 +105,7 @@ void setupAP(void) {
       delay(10);
      }
   }
-  Serial.println("");
+  Serial.println(""); 
   st = "<ul>";
   for (int i = 0; i < n; ++i)
     {
@@ -135,7 +133,7 @@ int mdns1(int webtype)
 {
   // Check for any mDNS queries and send responses
   mdns.update();
-
+  
   // Check if a client has connected
   WiFiClient client = server.available();
   if (!client) {
@@ -148,10 +146,10 @@ int mdns1(int webtype)
   while(client.connected() && !client.available()){
     delay(1);
    }
-
+  
   // Read the first line of HTTP request
   String req = client.readStringUntil('\r');
-
+  
   // First line of HTTP request looks like "GET /path HTTP/1.1"
   // Retrieve the "/path" part by finding the spaces
   int addr_start = req.indexOf(' ');
@@ -164,7 +162,7 @@ int mdns1(int webtype)
   req = req.substring(addr_start + 1, addr_end);
   Serial.print("Request: ");
   Serial.println(req);
-  client.flush();
+  client.flush(); 
   String s;
   if ( webtype == 1 ) {
       if (req == "/")
@@ -183,7 +181,7 @@ int mdns1(int webtype)
         // /a?ssid=blahhhh&pass=poooo
         Serial.println("clearing eeprom");
         for (int i = 0; i < 96; ++i) { EEPROM.write(i, 0); }
-        String qsid;
+        String qsid; 
         qsid = req.substring(8,req.indexOf('&'));
         Serial.println(qsid);
         Serial.println("");
@@ -191,21 +189,21 @@ int mdns1(int webtype)
         qpass = req.substring(req.lastIndexOf('=')+1);
         Serial.println(qpass);
         Serial.println("");
-
+        
         Serial.println("writing eeprom ssid:");
         for (int i = 0; i < qsid.length(); ++i)
           {
             EEPROM.write(i, qsid[i]);
             Serial.print("Wrote: ");
-            Serial.println(qsid[i]);
+            Serial.println(qsid[i]); 
           }
-        Serial.println("writing eeprom pass:");
+        Serial.println("writing eeprom pass:"); 
         for (int i = 0; i < qpass.length(); ++i)
           {
             EEPROM.write(32+i, qpass[i]);
             Serial.print("Wrote: ");
-            Serial.println(qpass[i]);
-          }
+            Serial.println(qpass[i]); 
+          }    
         EEPROM.commit();
         s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266 ";
         s += "Found ";
@@ -217,7 +215,7 @@ int mdns1(int webtype)
         s = "HTTP/1.1 404 Not Found\r\n\r\n";
         Serial.println("Sending 404");
       }
-  }
+  } 
   else
   {
       if (req == "/")
@@ -227,11 +225,20 @@ int mdns1(int webtype)
         s += "</html>\r\n\r\n";
         Serial.println("Sending 200");
       }
+      else if ( req.startsWith("/cleareeprom") ) {
+        s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266";
+        s += "<p>Clearing the EEPROM<p>";
+        s += "</html>\r\n\r\n";
+        Serial.println("Sending 200");  
+        Serial.println("clearing eeprom");
+        for (int i = 0; i < 96; ++i) { EEPROM.write(i, 0); }
+        EEPROM.commit();
+      }
       else
       {
         s = "HTTP/1.1 404 Not Found\r\n\r\n";
         Serial.println("Sending 404");
-      }
+      }       
   }
   client.print(s);
   Serial.println("Done with client");
